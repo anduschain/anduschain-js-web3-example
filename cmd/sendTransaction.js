@@ -8,7 +8,7 @@ const { Buffer } = require('buffer');
 // get local keystore
 const { address, privateKey, signTransaction, sign } = decryptedAccount(config.keyPath, config.keyPass);
 // {
-//     address: '0xfef6f81c2c9e1fa327cad572d352b913bc074a0d.json',
+//     address: '0xfef6f81c2c9e1fa327cad572d352b913bc074a0d',
 //     privateKey: '0xabd1374002952e5f3b60fd16293d06521e1557d9dfb9996561568423a26a9cc9',
 //     signTransaction: [Function: signTransaction],
 //     sign: [Function: sign],
@@ -44,7 +44,17 @@ async function getTransaction(txHash) {
     }
 }
 
-async function sendTransactionWithPrivateKey(privatekey) {
+async function getNonce(address) {
+    try{
+       const res = await web3.eth.getTransactionCount(address);
+       return Number(res);
+    }catch (e) {
+        console.error(e);
+        return 0;
+    }
+}
+
+async function sendTransactionWithPrivateKey(address, privatekey) {
     try{
         // privatekey.substr(2, privatekey.length-1) -> remove 0x..
         const privateKey = Buffer.from(
@@ -52,7 +62,7 @@ async function sendTransactionWithPrivateKey(privatekey) {
             'hex',
         );
         const txData = {
-            nonce: 1,
+            nonce: await getNonce(address),
             to: '0xfef6f81c2c9e1fa327cad572d352b913bc074a0d',
             value: '0x1',
             data: '0x',
@@ -66,7 +76,7 @@ async function sendTransactionWithPrivateKey(privatekey) {
         console.log('Senders ChainId: ' + tx.getChainId());
         console.log("Fee ", tx.getUpfrontCost().toString());
 
-        // send transaction
+        //send transaction
         const receipt = await web3.eth.sendSignedTransaction('0x' + tx.serialize().toString('hex'))
         console.log("Transaction receipt : ", receipt)
 
@@ -78,4 +88,4 @@ async function sendTransactionWithPrivateKey(privatekey) {
 // getBalance(address);
 // getBlock(1000);
 // getTransaction('0x2388788826de461ca3a52ceb4437762bf9f8d73cf9cafd92abb6dd2283b97981');
-// sendTransactionWithPrivateKey(privateKey);
+sendTransactionWithPrivateKey(address, privateKey);
