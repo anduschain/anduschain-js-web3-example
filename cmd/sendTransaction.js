@@ -1,9 +1,9 @@
 // send Transaction example
 const web3 = require('../manage/rpcConn');
 const config = require('../config');
-const { Transaction } = require('anduschain-js');
 const { decryptedAccount } = require('../manage/keyUtil');
-const { Buffer } = require('buffer');
+const util = require('../util');
+const {GetNonce, SendTransactionWithPrivateKey} = util(web3);
 
 // get local keystore
 const { address, privateKey, signTransaction, sign } = decryptedAccount(config.keyPath, config.keyPass);
@@ -56,30 +56,14 @@ async function getNonce(address) {
 
 async function sendTransactionWithPrivateKey(address, privatekey) {
     try{
-        // privatekey.substr(2, privatekey.length-1) -> remove 0x..
-        const privateKey = Buffer.from(
-            privatekey.substr(2, privatekey.length-1),
-            'hex',
-        );
-        const txData = {
-            nonce: await getNonce(address),
+        const nonce = await GetNonce(address);
+        const { Receipt } = await SendTransactionWithPrivateKey({
+            nonce: nonce,
             to: '0xfef6f81c2c9e1fa327cad572d352b913bc074a0d',
             value: '0x1',
             data: '0x',
-        };
-        const tx = new Transaction(txData, 'testnet');
-        tx.sign(privateKey);
-        console.log("Transasion JSON: " + JSON.stringify(tx.toJSON(true)));
-        console.log("Transasion rplEncode: " + tx.serialize().toString('hex'));
-        console.log('Transaction Hash: ' + tx.hash().toString('hex'));
-        console.log("Sender", tx.getSenderAddress().toString('hex')); // fef6f81c2c9e1fa327cad572d352b913bc074a0d
-        console.log('Senders ChainId: ' + tx.getChainId());
-        console.log("Fee ", tx.getUpfrontCost().toString());
-
-        //send transaction
-        const receipt = await web3.eth.sendSignedTransaction('0x' + tx.serialize().toString('hex'))
-        console.log("Transaction receipt : ", receipt)
-
+        }, privatekey);
+        console.log(Receipt);
     }catch (e) {
         console.error(e)
     }
